@@ -1032,11 +1032,97 @@ footer .solar-icon {
 .notification-item .forum-actions {margin-top:10px;}
 @media(max-width:580px) {.notification-panel{padding:16px}.notification-actions .forum-button{flex:1 1 auto;}}
 
+
+/* M9 - Accessibility and responsive layout refinement */
+.skip-link {
+  position:fixed;
+  top:8px;
+  left:12px;
+  z-index:100;
+  transform:translateY(-180%);
+  padding:11px 15px;
+  border-radius:9px;
+  background:#102f24;
+  color:white;
+  font-weight:bold;
+}
+.skip-link:focus { transform:translateY(0); }
+#main-content:focus { outline:none; }
+
+/* Consistent focus indications for every keyboard-operated control. */
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline:3px solid #186fc3;
+  outline-offset:3px;
+}
+:where(.answer,.sim-choice):disabled { cursor:default; }
+.links a[aria-current="location"] {
+  color:#17623e;
+  text-decoration:underline;
+  text-underline-offset:5px;
+}
+
+/* Avoid clipped long names, forum content, and narrow flex/grid children. */
+.container, .hero-inner, .hero-inner > div,
+.sim-layout > div, .quiz, .forum-panel,
+.notification-panel, .account-box, .card, .bin { min-width:0; }
+.card, .bin, .faq-item, .notification-item { overflow-wrap:anywhere; }
+input, textarea, select, button { max-width:100%; }
+.hero h1 { overflow-wrap:normal; }
+
+/* A two-column hero needs more space than a typical tablet provides. */
+@media (min-width:760px) and (max-width:1099px) {
+  .hero-inner { display:block; }
+  .hero-visual { max-width:440px; margin:35px 0 0; }
+  .hero h1 { font-size:clamp(42px, 6vw, 65px); }
+}
+@media (min-width:1100px) {
+  .hero-inner { grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr); gap:32px; }
+  .hero h1 { font-size:clamp(50px,5vw,68px); }
+}
+@media (min-width:760px) and (max-width:980px) {
+  .cards.four {grid-template-columns:repeat(2,minmax(0,1fr));}
+  .cards.three, .sts {grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media (min-width:700px) and (max-width:850px) {
+  .sim-layout {grid-template-columns:1fr;}
+}
+@media (max-width:699px) {
+  .sim-choices,.answers {grid-template-columns:1fr;}
+}
+@media (max-width:479px) {
+  h1 {font-size:clamp(34px,10vw,48px);}
+  h2 {font-size:clamp(25px,8vw,34px);}
+  .hero-visual {padding:24px 18px;}
+  .sim-emoji {font-size:76px;min-height:95px;}
+  .quiz,.simulator-panel {padding:18px;}
+  .buttons .btn {flex:1 1 auto;text-align:center;}
+  .forum-controls,.notification-actions {min-width:0;}
+  .notification-top {align-items:stretch;}
+}
+
+/* Larger tap targets on the mobile navigation and interactive activities. */
+.menu {min-width:44px;min-height:44px;}
+.links a {min-height:44px;display:flex;align-items:center;}
+:where(.answer,.sim-choice,.forum-button,.account-button,
+       .account-form button,.btn,.notification-actions button) {min-height:44px;}
+.faq-item summary {min-height:48px;}
+.checks label {display:flex;align-items:center;gap:8px;cursor:pointer;}
+.checks input {flex-shrink:0;margin-right:4px;}
+
+@media (prefers-reduced-motion:reduce) {
+  *, *::before, *::after {
+    scroll-behavior:auto!important;
+    animation-duration:0.01ms!important;
+    transition-duration:0.01ms!important;
+  }
+}
+
 </style>
 </head>
 <body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
 <header>
-<nav>
+<nav aria-label="Main navigation">
 <a class="logo" href="#home"><span><svg class="solar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 4C10 4 5 8 5 15a5 5 0 0 0 5 5c7 0 10-7 10-16Z"/><path d="M4 21c3-6 7-9 12-12"/></svg></span> EcoSort</a>
 <button class="menu" id="menu" type="button" aria-label="Open navigation menu" aria-controls="links" aria-expanded="false"><svg class="solar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
 <div class="links" id="links">
@@ -1045,6 +1131,7 @@ footer .solar-icon {
 </nav>
 </header>
 
+<main id="main-content" tabindex="-1">
 <section class="hero" id="home">
 <div class="hero-inner">
 <div>
@@ -1099,13 +1186,13 @@ footer .solar-icon {
   <div class="sim-layout">
     <div class="sim-item" id="sim-item-panel">
       <div class="sim-emoji" id="sim-item-icon" aria-hidden="true">🍌</div>
-      <h3 id="sim-item-name">Banana Peel</h3>
+      <h3 id="sim-item-name" tabindex="-1">Banana Peel</h3>
       <p>Where should you put this item?</p>
     </div>
     <div class="sim-select" id="sim-select-panel">
-      <h3>Choose the correct category</h3>
+      <h3 id="sim-category-heading">Choose the correct category</h3>
       <p>Select one answer to check your knowledge.</p>
-      <div class="sim-choices" id="sim-choices">
+      <div class="sim-choices" id="sim-choices" role="group" aria-labelledby="sim-item-name sim-category-heading">
         <button type="button" class="sim-choice" data-choice="0"><strong>Biodegradable</strong><small>Food and garden waste</small></button>
         <button type="button" class="sim-choice blue" data-choice="1"><strong>Recyclable</strong><small>Accepted clean materials</small></button>
         <button type="button" class="sim-choice gray" data-choice="2"><strong>Residual</strong><small>Non-recyclable waste</small></button>
@@ -1154,7 +1241,7 @@ footer .solar-icon {
   <div class="quiz-status"><strong id="qn">Question 1</strong><span id="quiz-score">Score: 0</span><span id="quiz-best">Best: —</span></div>
   <div class="quiz-progress" id="quiz-progress" role="progressbar" aria-label="Quiz progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="quiz-bar"></div></div>
   <h3 id="question"></h3>
-  <div class="answers" id="answers"></div>
+  <div class="answers" id="answers" role="group" aria-label="Quiz answer choices"></div>
   <div id="result" role="status" aria-live="polite" aria-atomic="true"></div>
   <p id="quiz-explanation" class="quiz-explanation" hidden></p>
   <button class="btn green" id="next" type="button" hidden>Next Question</button>
@@ -1170,7 +1257,7 @@ footer .solar-icon {
 <label><input class="habit" type="checkbox"> I will reuse items when possible.</label>
 <label><input class="habit" type="checkbox"> I will handle e-waste responsibly.</label>
 </div>
-<div class="progress" id="commitment-progress" role="progressbar" aria-label="Commitments selected" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="bar"></div></div><p id="percent">0% commitment</p>
+<div class="progress" id="commitment-progress" role="progressbar" aria-label="Commitments selected" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="bar"></div></div><p id="percent" role="status" aria-live="polite">0% commitment</p>
 </div></section>
 
 <section id="sts"><div class="container">
@@ -1272,7 +1359,7 @@ footer .solar-icon {
           <button class="forum-button secondary" type="button" id="forum-refresh">Refresh</button>
         </div>
         <p class="forum-meta">Browse the most recent discussions. Use “Load More” to see older posts. Search filters posts already loaded on this page.</p>
-        <div id="forum-list" aria-label="Community posts"></div>
+        <div id="forum-list" aria-label="Community posts" role="region"></div>
         <button class="forum-button secondary" type="button" id="forum-more" hidden>Load More Discussions</button>
       </div>
       <div class="forum-panel" id="forum-compose-panel" hidden>
@@ -1358,7 +1445,7 @@ footer .solar-icon {
         </div>
       </div>
       <p class="forum-small" id="notification-status" role="status" aria-live="polite">Your notifications appear here when you sign in.</p>
-      <div class="notification-list" id="notification-list" aria-label="Your recent notifications"></div>
+      <div class="notification-list" id="notification-list" role="list" aria-label="Your recent notifications"></div>
       <p class="forum-small">Showing up to 50 recent notifications. Older notifications remain stored in your account.</p>
     </div>
   </div>
@@ -1454,6 +1541,8 @@ footer .solar-icon {
 
 <section class="cta"><h2>One better habit can start a bigger change.</h2><p>Learn • Sort • Reduce • Reuse • Share</p><a class="btn green" href="#home">Back to Top <svg class="solar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 20V4m-7 7 7-7 7 7"/></svg></a></section>
 
+</main>
+
 <footer><b><svg class="solar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 4C10 4 5 8 5 15a5 5 0 0 0 5 5c7 0 10-7 10-16Z"/><path d="M4 21c3-6 7-9 12-12"/></svg> EcoSort — IT for the SDGs</b><br>BSIT STS 101 Midterm Project • SDG 12</footer>
 
 <script>
@@ -1488,6 +1577,34 @@ document.addEventListener('keydown', function (event) {
     menu.focus();
   }
 });
+
+// Close the small-screen menu when the visitor clicks outside it.
+document.addEventListener('click', function (event) {
+  if (links.classList.contains('open') && !event.target.closest('nav')) {
+    closeMenu();
+  }
+});
+
+// Keep the menu state correct when changing between mobile and desktop.
+window.addEventListener('resize', function () {
+  if (window.innerWidth >= 1280 && links.classList.contains('open')) {
+    closeMenu();
+  }
+});
+
+function updateCurrentNavigation() {
+  var current = location.hash || '#home';
+  for (var i = 0; i < navigationLinks.length; i++) {
+    var item = navigationLinks[i];
+    if (item.getAttribute('href') === current && !item.hidden) {
+      item.setAttribute('aria-current', 'location');
+    } else {
+      item.removeAttribute('aria-current');
+    }
+  }
+}
+window.addEventListener('hashchange', updateCurrentNavigation);
+updateCurrentNavigation();
 
 // M2 - EXPANDED INTERACTIVE QUIZ
 // Each question has a topic, difficulty, four answers, the correct answer number,
@@ -1903,7 +2020,7 @@ function checkAnswer(selectedAnswer) {
   } else {
     buttons[selectedAnswer].classList.add('wrong');
     buttons[question.correct].classList.add('correct');
-    result.textContent = 'Not quite — the highlighted answer is correct.';
+    result.textContent = 'Not quite. The correct answer is ' + question.answers[question.correct] + '.';
   }
   quizScore.textContent = 'Score: ' + score + ' / ' + quizList.length;
   explanation.textContent = 'Why? ' + question.explanation;
@@ -1911,6 +2028,7 @@ function checkAnswer(selectedAnswer) {
   nextButton.textContent = questionNumber === quizList.length - 1 ? 'View Results' : 'Next Question';
   nextButton.hidden = false;
   updateQuizProgress(questionNumber + 1);
+  nextButton.focus();
 }
 
 function finishQuiz() {
@@ -2083,6 +2201,7 @@ function chooseWasteCategory(choice) {
   simNext.hidden = false;
   simNext.textContent = currentWasteItem === wasteItems.length - 1 ? 'View Results' : 'Next Item';
   updateSortingProgress(currentWasteItem + 1);
+  simNext.focus();
 }
 
 function showSortingResults() {
@@ -3238,6 +3357,7 @@ function notificationRender() {
     var item = notificationItems[j];
     var card = document.createElement('article');
     card.className = 'notification-item' + (item.read_at ? '' : ' unread');
+    card.setAttribute('role', 'listitem');
     var heading = document.createElement('h4');
     heading.textContent = item.title;
     card.appendChild(heading);
