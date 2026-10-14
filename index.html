@@ -1123,6 +1123,216 @@ input, textarea, select, button { max-width:100%; }
   }
 }
 
+
+/* M11 — Motion system. Only opacity and transforms are animated for large surfaces. */
+:root {
+  --eco-ease: cubic-bezier(.22, 1, .36, 1);
+  --eco-fast: 180ms;
+  --eco-medium: 320ms;
+  --eco-slow: 640ms;
+}
+
+/* Soft environmental atmosphere, independent from content and hit testing. */
+.hero {
+  position:relative;
+  isolation:isolate;
+}
+.hero::before {
+  content:"";
+  position:absolute;
+  pointer-events:none;
+  width:min(53vw,620px);
+  aspect-ratio:1;
+  right:-11%;
+  top:-56%;
+  z-index:0;
+  background:radial-gradient(circle,#a6e5bf7a 0%,#a6e5bf20 48%,transparent 72%);
+  border-radius:50%;
+  animation:eco-atmosphere 16s ease-in-out infinite alternate;
+}
+.hero-inner {position:relative;z-index:1;}
+.eco-ambient {
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+  overflow:hidden;
+}
+.eco-leaf {
+  position:absolute;
+  display:block;
+  width:clamp(15px,2vw,27px);
+  aspect-ratio:1.6;
+  border-radius:90% 5% 90% 5%;
+  background:#3c9b60;
+  opacity:.23;
+  transform-origin:80% 80%;
+  animation:eco-leaf-drift 13s ease-in-out infinite alternate;
+}
+.eco-leaf:nth-child(1) {top:15%;right:27%;animation-duration:15s;}
+.eco-leaf:nth-child(2) {top:66%;right:4%;width:18px;opacity:.18;animation-delay:-6s;}
+.eco-leaf:nth-child(3) {top:37%;left:49%;width:14px;opacity:.13;animation-duration:19s;animation-delay:-9s;}
+@keyframes eco-atmosphere {
+  from {transform:translate3d(-22px,0,0) scale(.96);opacity:.6;}
+  to {transform:translate3d(22px,12px,0) scale(1.06);opacity:1;}
+}
+@keyframes eco-leaf-drift {
+  0% {transform:translate3d(0,0,0) rotate(-12deg);}
+  100% {transform:translate3d(15px,-26px,0) rotate(20deg);}
+}
+@keyframes eco-enter {
+  from {opacity:0;transform:translate3d(0,20px,0);}
+  to {opacity:1;transform:translate3d(0,0,0);}
+}
+@keyframes eco-float {
+  0%,100% {transform:translate3d(0,0,0) rotate(-3deg);}
+  50% {transform:translate3d(0,-9px,0) rotate(3deg);}
+}
+@keyframes eco-pop {
+  0% {opacity:0;transform:translate3d(0,10px,0) scale(.98);}
+  100% {opacity:1;transform:translate3d(0,0,0) scale(1);}
+}
+@keyframes eco-correct {
+  0% {transform:scale(.98);}
+  50% {transform:scale(1.025);}
+  100% {transform:scale(1);}
+}
+@keyframes eco-incorrect {
+  0%,100% {transform:translate3d(0,0,0);}
+  30% {transform:translate3d(-4px,0,0);}
+  65% {transform:translate3d(4px,0,0);}
+}
+@keyframes eco-menu-open {
+  from {opacity:0;transform:translate3d(0,-11px,0) scale(.99);}
+  to {opacity:1;transform:translate3d(0,0,0) scale(1);}
+}
+
+/* Landing sequence: content stays in its existing positions. */
+.hero .badge {animation:eco-enter 620ms var(--eco-ease) both;}
+.hero h1 {animation:eco-enter 720ms var(--eco-ease) 90ms both;}
+.hero p {animation:eco-enter 760ms var(--eco-ease) 175ms both;}
+.hero .buttons {animation:eco-enter 760ms var(--eco-ease) 245ms both;}
+.hero-visual {animation:eco-enter 850ms var(--eco-ease) 260ms both;}
+.hero-visual .big .solar-icon {animation:eco-float 6.5s ease-in-out 1.2s infinite;}
+
+/* Reveal-on-scroll is progressive enhancement; content is visible without JavaScript. */
+.eco-reveal {
+  transition:opacity var(--eco-slow) var(--eco-ease),
+    transform var(--eco-slow) var(--eco-ease);
+  transition-delay:var(--eco-reveal-delay,0ms);
+}
+.eco-reveal.eco-reveal-pending {
+  opacity:0;
+  transform:translate3d(0,20px,0);
+}
+
+/* Keep interaction motion short and responsive, never block mouse or keyboard. */
+:is(.btn,.forum-button,.account-button,.account-form button,
+    .account-tabs button,.answer,.sim-choice,.menu,.account-text-button) {
+  transition:transform var(--eco-fast) var(--eco-ease),
+    background-color var(--eco-fast) ease,
+    border-color var(--eco-fast) ease,
+    color var(--eco-fast) ease;
+}
+:is(.card,.bin,.forum-panel,.notification-panel,.profile-card,.quiz,.sim-item,.account-box) {
+  transition:transform var(--eco-medium) var(--eco-ease);
+}
+.icon .solar-icon,.sts .solar-icon {
+  transition:transform var(--eco-medium) var(--eco-ease);
+}
+@media (hover:hover) and (pointer:fine) {
+  :is(.btn,.forum-button,.account-button,.account-form button,
+      .account-tabs button,.answer,.sim-choice,.menu):not(:disabled):hover {
+    transform:translate3d(0,-2px,0);
+  }
+  :is(.card,.bin,.forum-post,.notification-item):hover {
+    transform:translate3d(0,-4px,0);
+  }
+  :is(.card,.bin):hover .icon .solar-icon {
+    transform:translate3d(0,-3px,0) rotate(-5deg) scale(1.045);
+  }
+  .links a:hover {color:#17623e;}
+}
+:is(.btn,.forum-button,.account-button,.account-form button,
+    .account-tabs button,.answer,.sim-choice,.menu):not(:disabled):active {
+  transform:scale(.975);
+}
+.forum-post,.notification-item {
+  transition:transform var(--eco-medium) var(--eco-ease);
+}
+@media (max-width:1279px) {
+  .links.open {animation:eco-menu-open 260ms var(--eco-ease) both;}
+  .links.open a {animation:eco-enter 340ms var(--eco-ease) both;}
+  .links.open a:nth-child(2n) {animation-delay:35ms;}
+  .links.open a:nth-child(3n) {animation-delay:65ms;}
+}
+@media (min-width:1280px) and (hover:hover) {
+  .links a {position:relative;}
+  .links a::after {
+    content:"";
+    position:absolute;
+    bottom:0;
+    left:5px;
+    right:5px;
+    height:2px;
+    background:#25804f;
+    transform:scaleX(0);
+    transform-origin:left;
+    transition:transform var(--eco-medium) var(--eco-ease);
+  }
+  .links a:hover::after,.links a[aria-current="location"]::after,
+  .links a:focus-visible::after {transform:scaleX(1);}
+}
+
+/* Activity feedback and cloud-loaded cards animate only when inserted/displayed. */
+.sim-feedback:not([hidden]),.quiz-explanation:not([hidden]),
+.account-message:not([hidden]),.forum-message:not([hidden]) {
+  animation:eco-pop 320ms var(--eco-ease) both;
+}
+.answer,.forum-post,.forum-reply,.notification-item {
+  animation:eco-enter 370ms var(--eco-ease) both;
+}
+.answer:nth-child(2n),.forum-post:nth-child(2n),.notification-item:nth-child(2n) {
+  animation-delay:35ms;
+}
+.answer:nth-child(3n),.forum-post:nth-child(3n),.notification-item:nth-child(3n) {
+  animation-delay:65ms;
+}
+.answer.correct,.sim-choice.correct {animation:eco-correct 350ms var(--eco-ease) both;}
+.answer.wrong,.sim-choice.wrong {animation:eco-incorrect 310ms ease both;}
+.faq-item[open] > p {animation:eco-enter 260ms var(--eco-ease) both;}
+.faq-item[open] > summary::after {transform:rotate(90deg);}
+.faq-item summary::after {transition:transform 230ms var(--eco-ease);}
+.profile-avatar {transition:transform 340ms var(--eco-ease);}
+.profile-card:hover .profile-avatar {transform:rotate(-5deg) scale(1.04);}
+.checks label {transition:transform 250ms var(--eco-ease), background-color 200ms ease;}
+.checks label:has(input:checked) {background:#ffffff25;}
+@media (hover:hover) and (pointer:fine) {
+  .checks label:hover {transform:translate3d(3px,0,0);}
+}
+.progress div,.quiz-progress div,.sim-progress div {
+  transition:width 260ms var(--eco-ease);
+}
+
+/* Conserve resources when the page is backgrounded. */
+.eco-motion-paused *,
+.eco-motion-paused *::before,
+.eco-motion-paused *::after {animation-play-state:paused!important;}
+
+/* Keep essentials readable and still when motion is not wanted. */
+@media (prefers-reduced-motion:reduce) {
+  .hero::before,.eco-ambient {display:none!important;}
+  *,*::before,*::after {
+    scroll-behavior:auto!important;
+    animation:none!important;
+    transition:none!important;
+  }
+  .eco-reveal.eco-reveal-pending {opacity:1!important;transform:none!important;}
+}
+@media (max-width:479px) {
+  .eco-leaf:nth-child(3),.hero::before {display:none;}
+}
+
 </style>
 </head>
 <body>
@@ -1139,6 +1349,7 @@ input, textarea, select, button { max-width:100%; }
 
 <main id="main-content" tabindex="-1">
 <section class="hero" id="home">
+<div class="eco-ambient" aria-hidden="true"><span class="eco-leaf"></span><span class="eco-leaf"></span><span class="eco-leaf"></span></div>
 <div class="hero-inner">
 <div>
 <span class="badge">SDG 12 • RESPONSIBLE CONSUMPTION</span>
@@ -3486,6 +3697,81 @@ notificationElement('notification-read-all').addEventListener('click', function 
 });
 document.addEventListener('ecosort-auth-changed',notificationAuthChanged);
 notificationAuthChanged();
+</script>
+
+
+<script>
+// M11 — Smooth motion with a 120 Hz display as the performance target.
+// The browser chooses the actual refresh rate; 120 FPS cannot be guaranteed.
+(function () {
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  // Pause continuous decorative motion in background tabs.
+  function updateTabMotion() {
+    document.body.classList.toggle('eco-motion-paused', document.hidden);
+  }
+  document.addEventListener('visibilitychange', updateTabMotion);
+  updateTabMotion();
+
+  // Respect accessibility settings. All sections remain visible without JS.
+  if (reduceMotion.matches || !('IntersectionObserver' in window)) return;
+
+  var targets = document.querySelectorAll(
+    '#problem .kicker, #problem h2, #problem .intro, #problem .card,' +
+    '#guide .kicker, #guide h2, #guide .intro, #guide .bin,' +
+    '#simulator .kicker, #simulator h2, #simulator .intro, #simulator .simulator-panel,' +
+    '#quiz .kicker, #quiz h2, #quiz .intro, #quiz .quiz,' +
+    '#action .kicker, #action h2, #action .checks label,' +
+    '#sts .kicker, #sts h2, #sts .card,' +
+    '#faq .kicker, #faq h2, #faq .intro, #faq .faq-item,' +
+    '#community .kicker, #community h2, #community .intro, #community .forum-panel,' +
+    '#account .kicker, #account h2, #account .intro, #account .account-box,' +
+    '.cta h2, .cta p, .cta .btn'
+  );
+
+  var revealObserver = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.remove('eco-reveal-pending');
+      revealObserver.unobserve(entry.target);
+    });
+  }, {threshold:0.06, rootMargin:'0px 0px -5% 0px'});
+
+  for (var i = 0; i < targets.length; i++) {
+    var element = targets[i];
+    // Hidden authentication/moderation panels must stay hidden.
+    if (element.closest('[hidden]')) continue;
+    var rect = element.getBoundingClientRect();
+    // Do not hide content already visible, including hash-linked sections.
+    if (rect.top < window.innerHeight * .85 || rect.top < 0) continue;
+    element.classList.add('eco-reveal', 'eco-reveal-pending');
+    element.style.setProperty('--eco-reveal-delay', (i % 4) * 40 + 'ms');
+    revealObserver.observe(element);
+  }
+
+  // Focused content must never remain invisible to keyboard users.
+  document.addEventListener('focusin', function (event) {
+    var pending = event.target.closest('.eco-reveal-pending');
+    if (pending) {
+      pending.classList.remove('eco-reveal-pending');
+      revealObserver.unobserve(pending);
+    }
+  });
+
+  // Changing system preferences during a session immediately reveals everything.
+  function disableMotionOnRequest(event) {
+    if (!event.matches) return;
+    document.querySelectorAll('.eco-reveal-pending').forEach(function (element) {
+      element.classList.remove('eco-reveal-pending');
+    });
+    revealObserver.disconnect();
+  }
+  if (reduceMotion.addEventListener) {
+    reduceMotion.addEventListener('change', disableMotionOnRequest);
+  } else if (reduceMotion.addListener) {
+    reduceMotion.addListener(disableMotionOnRequest);
+  }
+})();
 </script>
 
 </body>
