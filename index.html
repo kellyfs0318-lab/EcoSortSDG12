@@ -909,6 +909,12 @@ footer .solar-icon {
 .account-signed-in strong {
   color:#17623e;
 }
+#account-signed-in > h3 {
+  margin:0 0 8px;
+}
+#account-signed-in > p.account-small {
+  margin:0 0 12px;
+}
 .account [hidden] {
   display:none!important;
 }
@@ -1415,10 +1421,10 @@ input, textarea, select, button { max-width:100%; }
         </form>
         <p class="forum-small" id="forum-report-message" role="status" aria-live="polite"></p>
       </div>
-      <!-- M7: Only authorized moderators can see and use this panel. -->
+      <!-- Only the verified bootstrap administrator can access moderation. -->
       <div class="forum-panel" id="forum-moderation-panel" hidden>
         <h3>Community Moderation</h3>
-        <p class="forum-small">Review reported posts and replies. Removal is permanent. Decisions are logged in Supabase.</p>
+        <p class="forum-small">Review reported posts and replies. Removal is permanent.</p>
         <div class="forum-actions">
           <button class="forum-button secondary" type="button" id="forum-reports-refresh">Refresh Reports</button>
         </div>
@@ -1458,7 +1464,7 @@ input, textarea, select, button { max-width:100%; }
     <h2 id="account-heading">Join the EcoSort Community</h2>
     <p class="intro" id="account-intro">Keep learning as a guest, or create an account to participate in community discussions. No login is needed to use the sorting simulator, quiz, or FAQ.</p>
     <div class="account-box">
-      <p id="account-connection" class="account-small">Checking account connection...</p>
+      <p id="account-connection" class="account-small" hidden>Checking account connection...</p>
       <p id="account-message" class="account-message" role="status" aria-live="polite" hidden></p>
 
       <div id="account-guest">
@@ -3183,6 +3189,14 @@ async function forumCheckModerator() {
   }
   try {
     var user = await forumVerifiedUser();
+    if (number !== forumModeratorCheck || !forumSignedIn() || user.id !== ecoUser.id) return;
+    // Showing the panel requires both the designated email and the protected admin role.
+    var bootstrapEmail = 'kellyfs0318@gmail.com';
+    var isBootstrapAdmin = user.email &&
+      user.email.toLowerCase() === bootstrapEmail &&
+      user.app_metadata && user.app_metadata.ecosort_role === 'admin';
+    if (!isBootstrapAdmin) return;
+    // Supabase performs the authoritative database-side authorization check.
     var response = await ecoAuth.rpc('ecosort_is_moderator');
     if (response.error) throw response.error;
     if (number !== forumModeratorCheck || !forumSignedIn() || user.id !== ecoUser.id) return;
