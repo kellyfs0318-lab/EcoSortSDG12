@@ -1013,6 +1013,25 @@ footer .solar-icon {
 .forum-access {border-left:4px solid #358756;padding:12px 15px;background:#f0f8f2;border-radius:8px;}
 @media(max-width:580px){.forum-panel{padding:17px}.forum-actions .forum-button{flex:1 1 auto}.forum-controls{display:grid}.forum-post{padding:12px}}
 
+
+/* M8 - Account notifications */
+#notification-badge[hidden] {display:none!important;}
+.links a[hidden],.notifications[hidden],.notifications [hidden] {display:none!important;}
+#notification-badge {display:inline-block;background:#17623e;color:white;border-radius:20px;padding:0 7px;font-size:12px;min-width:20px;text-align:center;}
+.notifications {background:#eaf5ed;}
+.notification-panel {background:white;border:1px solid #dce9df;border-radius:20px;padding:24px;margin-top:24px;box-shadow:0 8px 25px #174f3a0b;}
+.notification-top {display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;}
+.notification-top h3 {margin:0;}
+.notification-actions {display:flex;flex-wrap:wrap;gap:10px;}
+.notification-list {display:grid;gap:12px;margin-top:18px;}
+.notification-item {border:1px solid #dce9df;border-left:5px solid #9bbca7;padding:14px;border-radius:12px;background:#fafdfa;}
+.notification-item.unread {border-left-color:#17623e;background:#f0f8f2;}
+.notification-item h4 {font-size:18px;margin:0 0 4px;}
+.notification-item p {margin:6px 0;overflow-wrap:anywhere;}
+.notification-item time {font-size:13px;color:#536d60;}
+.notification-item .forum-actions {margin-top:10px;}
+@media(max-width:580px) {.notification-panel{padding:16px}.notification-actions .forum-button{flex:1 1 auto;}}
+
 </style>
 </head>
 <body>
@@ -1021,7 +1040,7 @@ footer .solar-icon {
 <a class="logo" href="#home"><span><svg class="solar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 4C10 4 5 8 5 15a5 5 0 0 0 5 5c7 0 10-7 10-16Z"/><path d="M4 21c3-6 7-9 12-12"/></svg></span> EcoSort</a>
 <button class="menu" id="menu" type="button" aria-label="Open navigation menu" aria-controls="links" aria-expanded="false"><svg class="solar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
 <div class="links" id="links">
-<a href="#home">Home</a><a href="#problem">Problem</a><a href="#guide">Sort Guide</a><a href="#simulator">Simulator</a><a href="#quiz">Quiz</a><a href="#action">Take Action</a><a href="#sts">STS</a><a href="#faq">FAQ</a><a href="#community">Community</a><a href="#account" id="account-nav-link">Account</a>
+<a href="#home">Home</a><a href="#problem">Problem</a><a href="#guide">Sort Guide</a><a href="#simulator">Simulator</a><a href="#quiz">Quiz</a><a href="#action">Take Action</a><a href="#sts">STS</a><a href="#faq">FAQ</a><a href="#community">Community</a><a href="#notifications" id="notification-nav-link" hidden>Notifications <span id="notification-badge" hidden></span></a><a href="#account" id="account-nav-link">Account</a>
 </div>
 </nav>
 </header>
@@ -1319,6 +1338,28 @@ footer .solar-icon {
         <p id="forum-moderation-status" class="forum-message" role="status" aria-live="polite"></p>
         <div id="forum-reports-list" aria-label="Pending community reports"></div>
       </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- M8: Private, in-website notifications for signed-in members. -->
+<section class="notifications" id="notifications" hidden>
+  <div class="container">
+    <div class="kicker">COMMUNITY UPDATES</div>
+    <h2>Your Notifications</h2>
+    <p class="intro">See replies to your discussions and updates about content you reported. Only you can read your notifications.</p>
+    <div class="notification-panel">
+      <div class="notification-top">
+        <h3 id="notification-count">Recent Notifications</h3>
+        <div class="notification-actions">
+          <button type="button" class="forum-button secondary" id="notification-refresh">Refresh</button>
+          <button type="button" class="forum-button" id="notification-read-all">Mark Recent as Read</button>
+        </div>
+      </div>
+      <p class="forum-small" id="notification-status" role="status" aria-live="polite">Your notifications appear here when you sign in.</p>
+      <div class="notification-list" id="notification-list" aria-label="Your recent notifications"></div>
+      <p class="forum-small">Showing up to 50 recent notifications. Older notifications remain stored in your account.</p>
     </div>
   </div>
 </section>
@@ -3128,6 +3169,189 @@ forumElement('forum-report-cancel').addEventListener('click', forumCloseReport);
 forumElement('forum-reports-refresh').addEventListener('click', forumLoadReports);
 document.addEventListener('ecosort-auth-changed', forumCheckModerator);
 forumCheckModerator();
+</script>
+
+
+<script>
+// M8 - PRIVATE NOTIFICATIONS
+// Replies and moderation decisions create notifications in Supabase.
+// Browser users may read their own notifications and mark them as read.
+var notificationItems = [];
+var notificationOwner = '';
+var notificationRequest = 0;
+var notificationBusy = false;
+var notificationTimer = null;
+
+function notificationElement(id) {
+  return document.getElementById(id);
+}
+
+function notificationStatus(text) {
+  notificationElement('notification-status').textContent = text;
+}
+
+function notificationReset() {
+  // Incrementing this number invalidates all requests from a previous session.
+  notificationRequest++;
+  notificationOwner = '';
+  notificationItems = [];
+  notificationBusy = false;
+  notificationElement('notification-list').replaceChildren();
+  notificationElement('notification-count').textContent = 'Recent Notifications';
+  notificationElement('notification-badge').hidden = true;
+  notificationElement('notification-nav-link').hidden = true;
+  notificationElement('notifications').hidden = true;
+  notificationElement('notification-read-all').disabled = true;
+  notificationStatus('Your notifications appear here when you sign in.');
+  if (notificationTimer !== null) {
+    clearInterval(notificationTimer);
+    notificationTimer = null;
+  }
+}
+
+function notificationIsCurrent(request, userId) {
+  return request === notificationRequest &&
+    ecoAuth !== null && ecoUser !== null && !ecoRecovery &&
+    ecoUser.id === userId && notificationOwner === userId;
+}
+
+function notificationRender() {
+  var list = notificationElement('notification-list');
+  list.replaceChildren();
+  var unread = 0;
+  for (var i = 0; i < notificationItems.length; i++) {
+    if (!notificationItems[i].read_at) unread++;
+  }
+  notificationElement('notification-count').textContent = 'Recent Notifications (' + unread + ' unread)';
+  var badge = notificationElement('notification-badge');
+  badge.textContent = unread > 0 ? String(unread) : '';
+  badge.hidden = unread === 0;
+  notificationElement('notification-read-all').disabled = unread === 0 || notificationBusy;
+
+  if (notificationItems.length === 0) {
+    var empty = document.createElement('p');
+    empty.textContent = 'No notifications yet. New replies and moderation updates will appear here.';
+    list.appendChild(empty);
+    return;
+  }
+  for (var j = 0; j < notificationItems.length; j++) {
+    var item = notificationItems[j];
+    var card = document.createElement('article');
+    card.className = 'notification-item' + (item.read_at ? '' : ' unread');
+    var heading = document.createElement('h4');
+    heading.textContent = item.title;
+    card.appendChild(heading);
+    var message = document.createElement('p');
+    message.textContent = item.message;
+    card.appendChild(message);
+    var time = document.createElement('time');
+    time.textContent = forumDate(item.created_at);
+    time.dateTime = item.created_at;
+    card.appendChild(time);
+    var actions = document.createElement('div');
+    actions.className = 'forum-actions';
+    if (!item.read_at) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'forum-button secondary';
+      button.textContent = 'Mark as Read';
+      // Store the identifier on this button rather than capturing a changing loop variable.
+      button.dataset.notificationId = item.id;
+      button.addEventListener('click', function (event) {
+        notificationMarkRead([event.currentTarget.dataset.notificationId]);
+      });
+      actions.appendChild(button);
+    }
+    if (item.post_id) {
+      var link = document.createElement('a');
+      link.href = '#community';
+      link.textContent = 'View Community';
+      link.className = 'forum-button secondary';
+      actions.appendChild(link);
+    }
+    card.appendChild(actions);
+    list.appendChild(card);
+  }
+}
+
+async function notificationLoad() {
+  if (notificationBusy || !notificationOwner || !ecoAuth) return;
+  var request = ++notificationRequest;
+  var userId = notificationOwner;
+  notificationBusy = true;
+  notificationStatus('Loading notifications...');
+  notificationElement('notification-refresh').disabled = true;
+  try {
+    var result = await ecoAuth.from('ecosort_notifications')
+      .select('id,kind,title,message,post_id,created_at,read_at')
+      .eq('user_id', userId).order('created_at', {ascending:false}).limit(50);
+    if (!notificationIsCurrent(request, userId)) return;
+    if (result.error) throw result.error;
+    notificationItems = result.data || [];
+    notificationStatus('Up to 50 recent notifications. Refresh to check for updates.');
+  } catch (error) {
+    if (!notificationIsCurrent(request, userId)) return;
+    notificationStatus('Notifications unavailable. Check that the M8 Supabase setup is installed. ' + accountError(error));
+  } finally {
+    if (notificationIsCurrent(request, userId)) {
+      notificationBusy = false;
+      notificationElement('notification-refresh').disabled = false;
+      notificationRender();
+    }
+  }
+}
+
+async function notificationMarkRead(ids) {
+  if (notificationBusy || !notificationOwner || ids.length === 0) return;
+  var request = ++notificationRequest;
+  var userId = notificationOwner;
+  notificationBusy = true;
+  notificationElement('notification-read-all').disabled = true;
+  notificationStatus('Saving read status...');
+  try {
+    var response = await ecoAuth.from('ecosort_notifications')
+      .update({read_at:new Date().toISOString()})
+      .eq('user_id',userId).in('id',ids).is('read_at',null).select('id');
+    if (!notificationIsCurrent(request,userId)) return;
+    if (response.error) throw response.error;
+    // Reload from the database so only confirmed changes appear as read.
+    notificationBusy = false;
+    await notificationLoad();
+  } catch (error) {
+    if (!notificationIsCurrent(request,userId)) return;
+    notificationBusy = false;
+    notificationStatus('Could not mark notification as read. ' + accountError(error));
+    notificationRender();
+  }
+}
+
+function notificationAuthChanged() {
+  if (ecoAuth === null || ecoUser === null || ecoRecovery) {
+    notificationReset();
+    return;
+  }
+  // Repeated token refresh or profile updates should not clear the current inbox.
+  if (notificationOwner === ecoUser.id) return;
+  notificationReset();
+  notificationOwner = ecoUser.id;
+  notificationElement('notification-nav-link').hidden = false;
+  notificationElement('notifications').hidden = false;
+  notificationLoad();
+  notificationTimer = setInterval(function () {
+    if (!document.hidden) notificationLoad();
+  }, 60000);
+}
+
+notificationElement('notification-refresh').addEventListener('click', notificationLoad);
+notificationElement('notification-read-all').addEventListener('click', function () {
+  var ids = [];
+  for (var i = 0; i < notificationItems.length; i++) {
+    if (!notificationItems[i].read_at) ids.push(notificationItems[i].id);
+  }
+  notificationMarkRead(ids);
+});
+document.addEventListener('ecosort-auth-changed',notificationAuthChanged);
+notificationAuthChanged();
 </script>
 
 </body>
